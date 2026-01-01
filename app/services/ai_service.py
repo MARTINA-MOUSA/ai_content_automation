@@ -14,23 +14,40 @@ def validate_ai_news(text: str) -> bool:
     if not client:
         return False
         
+    # If the text is extremely short or default failure text, it's likely a scraping failure.
+    # In such cases, we might want to be careful, but for now let's let LLM decide or pass through.
+    if len(text.strip()) < 50:
+        return True # Default to True to allow extraction node to be the judge if possible
+        
     try:
         prompt = f"""
-        Analyze the following content (Title, Description, and/or Transcript).
-        Is this content related to Artificial Intelligence (AI), Machine Learning, LLMs, or AI-related news?
+        Is the following content related to Artificial Intelligence (AI), Machine Learning, LLMs, or AI-related technology news?
         
-        Answer with 'YES' if it is related, or 'NO' if it is not.
-        Only respond with the word YES or NO.
+        Answer YES or NO.
         
         Content:
-        {text[:8000]}
+        {text[:5000]}
         """
         response = client.models.generate_content(
             model="gemini-2.5-flash",
-            contents=prompt
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=0.0 # Strictness
+            )
         )
-        answer = response.text.strip().upper()
-        return "YES" in answer
+        
+        # Check if response actually has text (might be blocked by safety)
+        if hasattr(response, 'text') and response.text:
+            answer = response.text.strip().upper()
+            # If Gemini explicitly says NO, we return False. Otherwise, we assume it's relevant or Gemini is being chatty.
+            if "NO" in answer and "YES" not in answer:
+                return False
+            return True
+        else:
+            # If blocked by safety or empty, it might be sensitive AI news, so we error on the side of caution.
+            print("Validation Warning: Empty or blocked response from Gemini.")
+            return True
+            
     except Exception as e:
         print(f"Validation Error: {e}")
         return True # Default to True to avoid skipping on API errors

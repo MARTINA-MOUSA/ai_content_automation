@@ -19,11 +19,20 @@ def extract_youtube(url: str) -> dict:
     # Try to get Title and Description for context
     title = "Unknown Title"
     description = ""
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9'
+    }
     try:
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, timeout=10, headers=headers)
         soup = BeautifulSoup(response.text, 'html.parser')
-        title = soup.find("meta", property="og:title")["content"] if soup.find("meta", property="og:title") else "Unknown Title"
-        description = soup.find("meta", property="og:description")["content"] if soup.find("meta", property="og:description") else ""
+        
+        # Try multiple meta tags for better hit rate
+        title_tag = soup.find("meta", property="og:title") or soup.find("title")
+        title = title_tag["content"] if title_tag and title_tag.has_attr("content") else (title_tag.text if title_tag else "Unknown Title")
+        
+        desc_tag = soup.find("meta", property="og:description") or soup.find("meta", name="description")
+        description = desc_tag["content"] if desc_tag and desc_tag.has_attr("content") else ""
     except Exception as e:
         print(f"YouTube Meta Scrape Error: {e}")
 
