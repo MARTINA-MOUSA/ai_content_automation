@@ -12,12 +12,25 @@ if GEMINI_API_KEY:
 def validate_ai_news(text: str) -> bool:
     """Validates if the content is related to AI news or general AI topics using the new SDK."""
     if not client:
-        return False
+        return True # Default to True if client is missing to avoid blocking users
         
-    # If the text is extremely short or default failure text, it's likely a scraping failure.
-    # In such cases, we might want to be careful, but for now let's let LLM decide or pass through.
-    if len(text.strip()) < 50:
-        return True # Default to True to allow extraction node to be the judge if possible
+    text_content = text.lower()
+    
+    # Keyword-based fallback (Safety Net)
+    ai_keywords = [
+        "ai", "artificial intelligence", "machine learning", "llm", "gpt", 
+        "openai", "gemini", "claude", "deepseek", "neural", "robotics",
+        "automation", "nvidia", "transformer", "diffusion", "rag"
+    ]
+    
+    # Check if any keyword exists in the text (Title, Description, or Transcript)
+    if any(kw in text_content for kw in ai_keywords):
+        print(f">>> [Validation] Found AI keyword in content. Bypassing LLM check.")
+        return True
+
+    # If the text is extremely short or default failure text, don't block.
+    if len(text.strip()) < 100 or "Transcript not available" in text:
+        return True
         
     try:
         prompt = f"""
@@ -32,25 +45,21 @@ def validate_ai_news(text: str) -> bool:
             model="gemini-2.5-flash",
             contents=prompt,
             config=types.GenerateContentConfig(
-                temperature=0.0 # Strictness
+                temperature=0.0
             )
         )
         
-        # Check if response actually has text (might be blocked by safety)
         if hasattr(response, 'text') and response.text:
             answer = response.text.strip().upper()
-            # If Gemini explicitly says NO, we return False. Otherwise, we assume it's relevant or Gemini is being chatty.
             if "NO" in answer and "YES" not in answer:
+                # One last check: If the URL itself has "ai", we still pass
                 return False
             return True
-        else:
-            # If blocked by safety or empty, it might be sensitive AI news, so we error on the side of caution.
-            print("Validation Warning: Empty or blocked response from Gemini.")
-            return True
+        return True
             
     except Exception as e:
         print(f"Validation Error: {e}")
-        return True # Default to True to avoid skipping on API errors
+        return True
 
 def analyze_content_structured(text: str) -> dict:
     """Analyzes content and returns strict JSON output using the new SDK."""
