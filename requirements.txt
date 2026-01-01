@@ -1,0 +1,23 @@
+fastapi
+uvicorn
+
+# LangChain & LangGraph
+langgraph
+langchain
+langchain-google-genai
+google-generativeai
+
+# Content extraction
+youtube-transcript-api==0.6.2
+beautifulsoup4
+requests
+
+# PDF generation
+reportlab
+
+# Config & validation
+pydantic
+python-dotenv
+
+# UI
+streamlit
