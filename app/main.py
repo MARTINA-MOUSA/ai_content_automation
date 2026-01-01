@@ -13,11 +13,14 @@ def run_automation_task(request: AnalyzeRequest):
     Runs the LangGraph workflow.
     """
     initial_state = {
-        "input_url": request.url,
-        "content_text": None,
-        "analysis_data": None,
-        "pdf_path": None,
-        "status": "started",
+        "url": request.url,
+        "source_type": "",
+        "raw_text": "",
+        "metadata": {},
+        "is_ai_news": False,
+        "analysis_result": {},
+        "pdf_path": "",
+        "status": "starting",
         "error": None
     }
     
