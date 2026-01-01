@@ -7,19 +7,28 @@ if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
 def validate_ai_news(text: str) -> bool:
-    """Validates if the content is related to AI news."""
+    """Validates if the content is related to AI news or general AI topics."""
     if not GEMINI_API_KEY:
         return False
         
     try:
         model = genai.GenerativeModel("gemini-2.5-flash")
-        prompt = f"Is the following content related to Artificial Intelligence news? Answer with YES or NO only.\n\nContent:\n{text[:5000]}"
+        prompt = f"""
+        Analyze the following content (Title, Description, and/or Transcript).
+        Is this content related to Artificial Intelligence (AI), Machine Learning, LLMs, or AI-related news?
+        
+        Answer with 'YES' if it is related, or 'NO' if it is not.
+        Only respond with the word YES or NO.
+        
+        Content:
+        {text[:8000]}
+        """
         response = model.generate_content(prompt)
         answer = response.text.strip().upper()
         return "YES" in answer
     except Exception as e:
         print(f"Validation Error: {e}")
-        return False
+        return True # Default to True to avoid skipping on API errors if partially confident
 
 def analyze_content_structured(text: str) -> dict:
     """Analyzes content and returns strict JSON output."""

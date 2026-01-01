@@ -13,20 +13,37 @@ def get_video_id(url: str) -> str:
     raise ValueError("Invalid YouTube URL")
 
 def extract_youtube(url: str) -> dict:
-    """Extract transcript and basic metadata from YouTube."""
+    """Extract transcript, title, and description from YouTube."""
     video_id = get_video_id(url)
+    
+    # Try to get Title and Description for context
+    title = "Unknown Title"
+    description = ""
+    try:
+        response = requests.get(url, timeout=10)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        title = soup.find("meta", property="og:title")["content"] if soup.find("meta", property="og:title") else "Unknown Title"
+        description = soup.find("meta", property="og:description")["content"] if soup.find("meta", property="og:description") else ""
+    except Exception as e:
+        print(f"YouTube Meta Scrape Error: {e}")
+
+    # Try to get Transcript
     try:
         transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=["en", "ar"])
-        raw_text = " ".join(item["text"] for item in transcript_list)
+        transcript_text = " ".join(item["text"] for item in transcript_list)
     except Exception:
-        raw_text = "Transcript not available."
+        transcript_text = "Transcript not available."
+    
+    # Combine for validation/analysis context
+    raw_text = f"TITLE: {title}\n\nDESCRIPTION: {description}\n\nTRANSCRIPT: {transcript_text}"
     
     return {
         "raw_text": raw_text,
         "metadata": {
             "author": "YouTube Creator",
             "date": "Unknown",
-            "source": url
+            "source": url,
+            "title": title
         }
     }
 
