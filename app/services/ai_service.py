@@ -9,6 +9,8 @@ client = None
 if GEMINI_API_KEY:
     client = genai.Client(api_key=GEMINI_API_KEY)
 
+import re
+
 def validate_ai_news(text: str) -> bool:
     """Validates if the content is related to AI news or general AI topics using the new SDK."""
     if not client:
@@ -17,29 +19,38 @@ def validate_ai_news(text: str) -> bool:
     text_content = text.lower()
     
     # Keyword-based fallback (Safety Net)
+    # Using word boundaries to avoid matching "said", "paid", etc. for "ai"
     ai_keywords = [
-        "ai", "artificial intelligence", "machine learning", "llm", "gpt", 
+        "ai", "artificial intelligence", "machine learning", "ml", "llm", "gpt", 
         "openai", "gemini", "claude", "deepseek", "neural", "robotics",
-        "automation", "nvidia", "transformer", "diffusion", "rag"
+        "automation", "nvidia", "transformer", "diffusion", "rag", "bot",
+        "agentic", "agent", "intelligence", "computing"
     ]
     
-    # Check if any keyword exists in the text (Title, Description, or Transcript)
-    if any(kw in text_content for kw in ai_keywords):
+    # If the text mentions youtube, be even more permissive
+    is_youtube = "youtube" in text_content or "youtu.be" in text_content
+    
+    if any(re.search(rf"\b{re.escape(kw)}\b", text_content) for kw in ai_keywords):
         print(f">>> [Validation] Found AI keyword in content. Bypassing LLM check.")
         return True
 
-    # If the text is extremely short or default failure text, don't block.
-    if len(text.strip()) < 100 or "Transcript not available" in text:
+    # If it's a video and contains common tech keywords, let it pass
+    if is_youtube and any(kw in text_content for kw in ["tech", "how", "tutorial", "news", "update"]):
+        print(f">>> [Validation] YouTube tech-related content detected. Passing.")
+        return True
+
+    # If the text is short or transcript missing, don't block
+    if len(text.strip()) < 150 or "transcript not available" in text_content:
         return True
         
     try:
+        # LLM check as a final pass
         prompt = f"""
-        Is the following content related to Artificial Intelligence (AI), Machine Learning, LLMs, or AI-related technology news?
-        
+        Does this content talk about Artificial Intelligence (AI), Machine Learning, or related tech? 
         Answer YES or NO.
         
         Content:
-        {text[:5000]}
+        {text[:4000]}
         """
         response = client.models.generate_content(
             model="gemini-2.5-flash",
@@ -52,7 +63,6 @@ def validate_ai_news(text: str) -> bool:
         if hasattr(response, 'text') and response.text:
             answer = response.text.strip().upper()
             if "NO" in answer and "YES" not in answer:
-                # One last check: If the URL itself has "ai", we still pass
                 return False
             return True
         return True
