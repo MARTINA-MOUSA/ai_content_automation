@@ -1,0 +1,13 @@
+Testing URL: https://youtu.be/nzYR9BwrBMM?si=J7GypOrFbucGHEer
+
+--- METADATA ---
+{'author': 'YouTube Creator', 'date': 'Unknown', 'source': 'https://youtu.be/nzYR9BwrBMM?si=J7GypOrFbucGHEer', 'title': 'ليه Deepseek v3.2 مختلف تمامًا؟ التجربة الكاملة 🔥'}
+
+--- EXTRACTED RAW TEXT (FIRST 500) ---
+TITLE: ليه Deepseek v3.2 مختلف تمامًا؟ التجربة الكاملة 🔥
+
+DESCRIPTION: #ai #deepseekv3.2exper #deepseekr1 #deepseekr1 #opensourceai #deepseekr10528 #deepsitev3🎥 أهلاً بيكم!في فيديو النهارده هنتكلم عن التحديث الجديد Deepseek v3....
+
+TRANSCRIPT: Transcript not available.
+
+Final Validation Result: True
